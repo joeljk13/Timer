@@ -1,7 +1,5 @@
-#ifndef _timer_h_
-#define _timer_h_
-
-// All non-public names begin with _timer to avoid naming conflicts
+#ifndef h_
+#define h_
 
 // If HAVE_BOOST or _HAVE_BOOST or BOOST or _BOOST is defined, this uses the
 // boost library for the statistical analysis; otherwise, it does some built in
@@ -14,18 +12,18 @@
 #include <utility>
 #include <vector>
 
-#if !defined(_timer_BOOST) && \
+#if !defined(BOOST) && \
     (defined(HAVE_BOOST)   || \
     defined(_HAVE_BOOST)   || \
     defined(BOOST)         || \
     defined(_BOOST))
-#define _timer_BOOST
+#define BOOST
 #endif
 
 #include <cmath>
 #include <cstddef>
 
-#if defined(_timer_BOOST)
+#if defined(BOOST)
 #include <boost/math/distributions/students_t.hpp>
 #endif
 
@@ -42,136 +40,136 @@ public:
     typedef _timer::steady_clock clock_type;
 
     timer() :
-        _timer_duration_ (0),
-        _timer_reps_ (0)
+        duration_ (0),
+        reps_ (0)
     { }
 
-    template <class _timer_Func, class ... _timer_Args>
-    timer(_timer_Func _timer_func, repetition_type _timer_reps,
-            _timer_Args... _timer_args) :
-        _timer_duration_ (0),
-        _timer_reps_ (0)
+    template <class Func, class ... Args>
+    timer(Func func, repetition_type reps,
+            Args... args) :
+        duration_ (0),
+        reps_ (0)
     {
-        this->measure(_timer_func, _timer_reps, std::forward<_timer_Args>(
-                _timer_args)...);
+        this->measure(func, reps, std::forward<Args>(
+                args)...);
     }
 
-    template <class _timer_Func, class _timer_Reps, class _timer_Period,
-            class... _timer_Args>
-    timer(_timer_Func _timer_func, _timer::duration<_timer_Reps, _timer_Period>
-            _timer_duration, _timer_Args... _timer_args) :
-        _timer_duration_ (0),
-        _timer_reps_ (0)
+    template <class Func, class Reps, class Period,
+            class... Args>
+    timer(Func func, _timer::duration<Reps, Period>
+            duration, Args... args) :
+        duration_ (0),
+        reps_ (0)
     {
-        this->measure(_timer_func, _timer_duration, std::forward<_timer_Args>(
-                _timer_args)...);
+        this->measure(func, duration, std::forward<Args>(
+                args)...);
     }
 
-    template <class _timer_Func, class... _timer_Args>
-    timer & measure(_timer_Func _timer_func, repetition_type _timer_reps,
-            _timer_Args... _timer_args)
+    template <class Func, class... Args>
+    timer & measure(Func func, repetition_type reps,
+            Args... args)
     {
-        _timer_reps_ += _timer_reps;
-        clock_type::time_point _timer_start, _timer_end;
-        _timer_start = clock_type::now();
-        while (_timer_reps) {
-            --_timer_reps;
-            _timer_func(std::forward<_timer_Args>(_timer_args)...);
+        reps_ += reps;
+        clock_type::time_point start, end;
+        start = clock_type::now();
+        while (reps) {
+            --reps;
+            func(std::forward<Args>(args)...);
         }
-        _timer_end = clock_type::now();
-        _timer_duration_ += _timer::duration_cast<duration_type>(_timer_end -
-                _timer_start);
+        end = clock_type::now();
+        duration_ += _timer::duration_cast<duration_type>(end -
+                start);
         return *this;
     }
 
-    template <class _timer_Func, class _timer_Reps, class _timer_Period,
-            class... _timer_Args>
-    timer & measure(_timer_Func _timer_func, _timer::duration<_timer_Reps,
-            _timer_Period> _timer_duration, _timer_Args... _timer_args)
+    template <class Func, class Reps, class Period,
+            class... Args>
+    timer & measure(Func func, _timer::duration<Reps,
+            Period> duration, Args... args)
     {
-        clock_type::time_point _timer_func_start (clock_type::now());
-        clock_type::time_point _timer_start, _timer_end, _timer_func_end
-                (_timer_func_start + _timer_duration);
-        constexpr duration_type _timer_zero = duration_type::zero();
-        duration_type _timer_func_duration (0);
-        repetition_type _timer_r = 1;
+        clock_type::time_point func_start (clock_type::now());
+        clock_type::time_point start, end, func_end
+                (func_start + duration);
+        constexpr duration_type zero = duration_type::zero();
+        duration_type func_duration (0);
+        repetition_type r = 1;
         while (true) {
-            repetition_type _timer_reps = _timer_r;
-            _timer_start = clock_type::now();
-            while (_timer_reps) {
-                --_timer_reps;
-                _timer_func(std::forward<_timer_Args>(_timer_args)...);
+            repetition_type reps = r;
+            start = clock_type::now();
+            while (reps) {
+                --reps;
+                func(std::forward<Args>(args)...);
             }
-            _timer_end = clock_type::now();
-            _timer_func_duration = _timer::duration_cast<duration_type>(
-                    _timer_end - _timer_start);
-            if (_timer_func_duration != _timer_zero) {
+            end = clock_type::now();
+            func_duration = _timer::duration_cast<duration_type>(
+                    end - start);
+            if (func_duration != zero) {
                 break;
             }
-            _timer_r *= 2;
+            r *= 2;
         }
-        _timer_reps_ += _timer_r;
-        _timer_duration_ += _timer_func_duration;
-        duration_type _timer_ns;
-        while ((_timer_ns = _timer::duration_cast<duration_type>(
-                _timer_func_end - _timer_end)) > _timer_zero) {
+        reps_ += r;
+        duration_ += func_duration;
+        duration_type ns;
+        while ((ns = _timer::duration_cast<duration_type>(
+                func_end - end)) > zero) {
             // Try to have this set of repetions spend half of the remaining
             // time alloted; while this will have more overhead, there's less
             // chance that it will accidentally go over the time limit
-            repetition_type _timer_reps = static_cast<repetition_type>(
-                    (_timer_ns * _timer_reps_) / (_timer_duration_ * 2));
-            if (_timer_reps < _timer_r) {
+            repetition_type reps = static_cast<repetition_type>(
+                    (ns * reps_) / (duration_ * 2));
+            if (reps < r) {
                 return *this;
             }
-            _timer_reps_ += _timer_reps;
-            _timer_start = clock_type::now();
-            while (_timer_reps) {
-                --_timer_reps;
-                _timer_func(std::forward<_timer_Args>(_timer_args)...);
+            reps_ += reps;
+            start = clock_type::now();
+            while (reps) {
+                --reps;
+                func(std::forward<Args>(args)...);
             }
-            _timer_end = clock_type::now();
-            _timer_duration_ += _timer::duration_cast<duration_type>(
-                    _timer_end - _timer_start);
+            end = clock_type::now();
+            duration_ += _timer::duration_cast<duration_type>(
+                    end - start);
         }
         return *this;
     }
 
     duration_type get_duration() const
-    { return _timer_duration_; }
+    { return duration_; }
 
     repetition_type get_repetitions() const
-    { return _timer_reps_; }
+    { return reps_; }
 
-    ratio_type get_timer_duration_per_repetition() const
-    { return _timer_duration_.count() / _timer_reps_; }
+    ratio_type getduration_per_repetition() const
+    { return duration_.count() / reps_; }
 
     ratio_type get_ratio() const
-    { return get_timer_duration_per_repetition(); }
+    { return getduration_per_repetition(); }
 
-    typedef long double _timer_real;
+    typedef long double real;
 
-    static _timer_real default_alpha;
+    static real default_alpha;
 
-    template <template <class, class...> class _timer_C>
-    static int compare(_timer_C<timer> _timer_timers1, _timer_C<timer> _timer_timers2,
-            _timer_real _timer_alpha = default_alpha);
+    template <template <class, class...> class C>
+    static int compare(C<timer> timers1, C<timer> timers2,
+            real alpha = default_alpha);
 
     static constexpr repetition_type MIN_REPS = 8;
     static constexpr unsigned int MAX_TIMERS = 16;
 
-    template <class _timer_Func1, class _timer_Func2, class... _timer_Args>
-    static int compare(_timer_Func1 _timer_func1, _timer_Func2 _timer_func2,
-            repetition_type _timer_reps, _timer_Args... _timer_args);
+    template <class Func1, class Func2, class... Args>
+    static int compare(Func1 func1, Func2 func2,
+            repetition_type reps, Args... args);
 
-    template <class _timer_Func1, class _timer_Func2, class _timer_Reps,
-            class _timer_Period, class... _timer_Args>
-    static int compare(_timer_Func1 _timer_func1, _timer_Func2 _timer_func2,
-            _timer::duration<_timer_Reps, _timer_Period> _timer_duration,
-            _timer_Args... _timer_args);
+    template <class Func1, class Func2, class Reps,
+            class Period, class... Args>
+    static int compare(Func1 func1, Func2 func2,
+            _timer::duration<Reps, Period> duration,
+            Args... args);
 
-    template <class _timer_T, std::size_t _timer_N>
-    static _timer_real _timer_cc(_timer_T (&_timer_xs)[_timer_N],
-                                 _timer_T (&_timer_ys)[_timer_N]);
+    template <class T, std::size_t N>
+    static real cc(T (&xs)[N],
+                                 T (&ys)[N]);
 
     enum time_complexity {
         CONSTANT,
@@ -185,347 +183,347 @@ public:
         FACTORIAL
     };
 
-    template <class _timer_Func, class _timer_T, std::size_t _timer_N = 16>
-    static time_complexity approx_time_complexity(_timer_Func _timer_func,
-            std::size_t _timer_max_n, _timer_T _timer_duration_);
+    template <class Func, class T, std::size_t N = 16>
+    static time_complexity approx_time_complexity(Func func,
+            std::size_t max_n, T duration_);
 
 private:
 
-    duration_type _timer_duration_;
+    duration_type duration_;
 
-    repetition_type _timer_reps_;
+    repetition_type reps_;
 
 }; // class timer
 
-timer::_timer_real timer::default_alpha = 0.01l;
+timer::real timer::default_alpha = 0.01l;
 
-template <template <class, class...> class _timer_C>
-int timer::compare(_timer_C<timer> _timer_timers1, _timer_C<timer> _timer_timers2,
-        _timer_real _timer_alpha)
+template <template <class, class...> class C>
+int timer::compare(C<timer> timers1, C<timer> timers2,
+        real alpha)
 {
-    std::vector<_timer_real> _timer_ratios1, _timer_ratios2;
-    int _timer_size1 = 0, _timer_size2 = 0;
-    _timer_real _timer_mean1 = 0.0l, _timer_mean2 = 0.0l,
-            _timer_variance1 = 0.0l, _timer_variance2 = 0.0l,
-            _timer_residuals = 0.0l;
-    for (const timer & _timer_tm : _timer_timers1) {
-        _timer_real _timer_ratio = static_cast<_timer_real>(
-                _timer_tm.get_timer_duration_per_repetition());
-        _timer_mean1 += _timer_ratio;
-        ++_timer_size1;
-        _timer_ratios1.emplace_back(_timer_ratio);
+    std::vector<real> ratios1, ratios2;
+    int size1 = 0, size2 = 0;
+    real mean1 = 0.0l, mean2 = 0.0l,
+            variance1 = 0.0l, variance2 = 0.0l,
+            residuals = 0.0l;
+    for (const timer & tm : timers1) {
+        real ratio = static_cast<real>(
+                tm.getduration_per_repetition());
+        mean1 += ratio;
+        ++size1;
+        ratios1.emplace_back(ratio);
     }
-    for (const timer & _timer_tm : _timer_timers2) {
-        _timer_real _timer_ratio = static_cast<_timer_real>(
-                _timer_tm.get_timer_duration_per_repetition());
-        _timer_mean2 += _timer_ratio;
-        ++_timer_size2;
-        _timer_ratios2.emplace_back(_timer_ratio);
+    for (const timer & tm : timers2) {
+        real ratio = static_cast<real>(
+                tm.getduration_per_repetition());
+        mean2 += ratio;
+        ++size2;
+        ratios2.emplace_back(ratio);
     }
-    _timer_mean1 /= _timer_size1;
-    _timer_mean2 /= _timer_size2;
-    std::sort(_timer_ratios1.begin(), _timer_ratios1.end());
-    std::sort(_timer_ratios2.begin(), _timer_ratios2.end());
-    for (_timer_real _timer_ratio : _timer_ratios1) {
-        _timer_residuals += _timer_ratio;
-        _timer_variance1 += _timer_ratio * _timer_ratio;
-    }
-    // Corrected 2-pass formula
-    _timer_variance1 = (_timer_variance1 - _timer_residuals * _timer_residuals
-            / _timer_size1) / (_timer_size1 - 1);
-    _timer_residuals = 0.0l;
-    for (_timer_real _timer_ratio : _timer_ratios2) {
-        _timer_residuals += _timer_ratio;
-        _timer_variance2 += _timer_ratio * _timer_ratio;
+    mean1 /= size1;
+    mean2 /= size2;
+    std::sort(ratios1.begin(), ratios1.end());
+    std::sort(ratios2.begin(), ratios2.end());
+    for (real ratio : ratios1) {
+        residuals += ratio;
+        variance1 += ratio * ratio;
     }
     // Corrected 2-pass formula
-    _timer_variance2 = (_timer_variance2 - _timer_residuals * _timer_residuals
-            / _timer_size2) / (_timer_size2 - 1);
-    _timer_real _timer_median1 = _timer_ratios1[_timer_size1 / 2];
-    if (_timer_size1 % 2 == 0) {
-        _timer_median1 = (_timer_median1 + _timer_ratios1[_timer_size1 / 2 +
+    variance1 = (variance1 - residuals * residuals
+            / size1) / (size1 - 1);
+    residuals = 0.0l;
+    for (real ratio : ratios2) {
+        residuals += ratio;
+        variance2 += ratio * ratio;
+    }
+    // Corrected 2-pass formula
+    variance2 = (variance2 - residuals * residuals
+            / size2) / (size2 - 1);
+    real median1 = ratios1[size1 / 2];
+    if (size1 % 2 == 0) {
+        median1 = (median1 + ratios1[size1 / 2 +
                 1]) * 0.5l;
     }
-    _timer_real _timer_median2 = _timer_ratios2[_timer_size2 / 2];
-    if (_timer_size2 % 2 == 0) {
-        _timer_median2 = (_timer_median2 + _timer_ratios2[_timer_size2 / 2 +
+    real median2 = ratios2[size2 / 2];
+    if (size2 % 2 == 0) {
+        median2 = (median2 + ratios2[size2 / 2 +
                 1]) * 0.5l;
     }
     // Test that timers1 < timers2
-    bool _timer_swapped = false;
-    if (_timer_mean2 < _timer_mean1 && _timer_median2 < _timer_median1) {
-        _timer_swapped = true;
+    bool swapped = false;
+    if (mean2 < mean1 && median2 < median1) {
+        swapped = true;
         // Only swap what will be used later on
-        std::swap(_timer_size1, _timer_size2);
-        std::swap(_timer_mean1, _timer_mean2);
-        std::swap(_timer_median1, _timer_median2);
-        std::swap(_timer_variance1, _timer_variance2);
+        std::swap(size1, size2);
+        std::swap(mean1, mean2);
+        std::swap(median1, median2);
+        std::swap(variance1, variance2);
     }
-    if (_timer_mean1 >= _timer_mean2 || _timer_median1 >= _timer_median2) {
+    if (mean1 >= mean2 || median1 >= median2) {
         // Neither set won in both mean and median
         return 0;
     }
     // t-test variables
-    _timer_real _timer_tmp1 = _timer_variance1 / _timer_size1,
-                _timer_tmp2 = _timer_variance2 / _timer_size2;
-    _timer_real _timer_t = (_timer_mean1 - _timer_mean2) /
-            std::sqrt(_timer_tmp1 + _timer_tmp2);
-    _timer_real _timer_df = (_timer_tmp1 + _timer_tmp2) *
-                            (_timer_tmp1 + _timer_tmp2) /
-                            (_timer_tmp1 * _timer_tmp1 / (_timer_size1 - 1) +
-                            _timer_tmp2 * _timer_tmp2 / (_timer_size2 - 1));
-#if defined(_timer_BOOST)
-    boost::math::students_t _timer_dist (static_cast<double>(_timer_df));
-    _timer_real _timer_prob = boost::math::cdf(_timer_dist, _timer_t);
-    if (_timer_prob < _timer_alpha) {
-        int _timer_ret = (_timer_mean1 < _timer_mean2 ? 1 : -1);
-        if (_timer_swapped) {
-            _timer_ret = -_timer_ret;
+    real tmp1 = variance1 / size1,
+                tmp2 = variance2 / size2;
+    real t = (mean1 - mean2) /
+            std::sqrt(tmp1 + tmp2);
+    real df = (tmp1 + tmp2) *
+                            (tmp1 + tmp2) /
+                            (tmp1 * tmp1 / (size1 - 1) +
+                            tmp2 * tmp2 / (size2 - 1));
+#if defined(BOOST)
+    boost::math::students_t dist (static_cast<double>(df));
+    real prob = boost::math::cdf(dist, t);
+    if (prob < alpha) {
+        int ret = (mean1 < mean2 ? 1 : -1);
+        if (swapped) {
+            ret = -ret;
         }
-        return _timer_ret;
+        return ret;
     }
     return 0;
 #else
     // Incomplete beta function
-    _timer_real _timer_x = _timer_df / (_timer_t * _timer_t + _timer_df);
-    _timer_real _timer_a = _timer_df * 0.5l;
-    _timer_real _timer_b = 0.5l;
-    _timer_real _timer_tmp = (_timer_x <= 0.0l || _timer_x >= 1.0l ? 0.0l :
-            std::exp(std::lgamma(_timer_a + _timer_b) +
-            _timer_a * std::log(_timer_x) - std::lgamma(_timer_a) +
-            _timer_b * std::log(1.0l - _timer_x) - std::lgamma(_timer_b)));
-    bool _timer_sub_from_1 = false;
-    if (_timer_x >= (_timer_a + 1.0l) / (_timer_a + _timer_b + 2.0l)) {
-        _timer_sub_from_1 = true;
-        std::swap(_timer_a, _timer_b);
-        _timer_x = 1.0l - _timer_x;
+    real x = df / (t * t + df);
+    real a = df * 0.5l;
+    real b = 0.5l;
+    real tmp = (x <= 0.0l || x >= 1.0l ? 0.0l :
+            std::exp(std::lgamma(a + b) +
+            a * std::log(x) - std::lgamma(a) +
+            b * std::log(1.0l - x) - std::lgamma(b)));
+    bool sub_from_1 = false;
+    if (x >= (a + 1.0l) / (a + b + 2.0l)) {
+        sub_from_1 = true;
+        std::swap(a, b);
+        x = 1.0l - x;
     }
     // Use Lentz's method with continued fractions
     // I don't have good variable names, so these are just single-letter
-    _timer_real _timer_c = 1.0l,
-            _timer_d = 1.0l / (1.0l - (_timer_a + _timer_b) * _timer_x /
-            (_timer_a + 1.0l)), _timer_e;
+    real c = 1.0l,
+            d = 1.0l / (1.0l - (a + b) * x /
+            (a + 1.0l)), e;
     // This doesn't represent the probability yet, but it will
-    _timer_real _timer_prob = _timer_d;
-    for (int _timer_n = 1; _timer_n <= 64; ++_timer_n) {
-        _timer_e = _timer_n * (_timer_b - _timer_n) * _timer_x /
-                ((_timer_a - 1.0l + _timer_n * 2) * (_timer_a + _timer_n * 2));
-        _timer_d = 1.0l / (_timer_e * _timer_d + 1.0l);
-        _timer_c = _timer_e / _timer_c + 1.0l;
-        _timer_prob *= _timer_c * _timer_d;
-        _timer_e = -(_timer_a + _timer_n) * (_timer_a + _timer_b + _timer_n) *
-                _timer_x / ((_timer_a + _timer_n * 2) *
-                (_timer_a + 1.0l + _timer_n * 2));
-        _timer_d = 1.0l / (_timer_e * _timer_d + 1.0l);
-        _timer_c = _timer_e / _timer_c + 1.0l;
-        _timer_prob *= _timer_c * _timer_d;
-        if (_timer_c * _timer_d - 1.0l < 1.0e-12l) {
+    real prob = d;
+    for (int n = 1; n <= 64; ++n) {
+        e = n * (b - n) * x /
+                ((a - 1.0l + n * 2) * (a + n * 2));
+        d = 1.0l / (e * d + 1.0l);
+        c = e / c + 1.0l;
+        prob *= c * d;
+        e = -(a + n) * (a + b + n) *
+                x / ((a + n * 2) *
+                (a + 1.0l + n * 2));
+        d = 1.0l / (e * d + 1.0l);
+        c = e / c + 1.0l;
+        prob *= c * d;
+        if (c * d - 1.0l < 1.0e-12l) {
             break;
         }
     }
-    _timer_prob *= _timer_tmp / _timer_a;
-    if (_timer_sub_from_1) {
-        _timer_prob = 1.0l - _timer_prob;
+    prob *= tmp / a;
+    if (sub_from_1) {
+        prob = 1.0l - prob;
     }
-    if (_timer_prob < 0.0l || _timer_prob > 1.0l) {
+    if (prob < 0.0l || prob > 1.0l) {
         return 0;
     }
-    if (_timer_prob < _timer_alpha / 2) {
-        int _timer_ret = (_timer_mean1 < _timer_mean2 ? 1 : -1);
-        if (_timer_swapped) {
-            _timer_ret = -_timer_ret;
+    if (prob < alpha / 2) {
+        int ret = (mean1 < mean2 ? 1 : -1);
+        if (swapped) {
+            ret = -ret;
         }
-        return _timer_ret;
+        return ret;
     }
     return 0;
 #endif
 }
 
-template <class _timer_Func1, class _timer_Func2, class... _timer_Args>
-int timer::compare(_timer_Func1 _timer_func1, _timer_Func2 _timer_func2,
-        timer::repetition_type _timer_reps, _timer_Args... _timer_args)
+template <class Func1, class Func2, class... Args>
+int timer::compare(Func1 func1, Func2 func2,
+        timer::repetition_type reps, Args... args)
 {
-    timer::repetition_type _timer_n = 1;
-    while (_timer_reps / (_timer_n * 2) >= timer::MIN_REPS &&
-            _timer_n * 2 <= timer::MAX_TIMERS) {
-        _timer_n *= 2;
+    timer::repetition_type n = 1;
+    while (reps / (n * 2) >= timer::MIN_REPS &&
+            n * 2 <= timer::MAX_TIMERS) {
+        n *= 2;
     }
-    _timer_reps /= _timer_n;
-    std::vector<timer> _timer_timers1, _timer_timers2;
-    _timer_timers1.reserve(_timer_n);
-    _timer_timers2.reserve(_timer_n);
-    _timer_n /= 2;
-    while (_timer_n) {
-        --_timer_n;
-        _timer_timers1.emplace_back(_timer_func1, _timer_reps,
-                std::forward<_timer_Args>(_timer_args)...);
-        _timer_timers2.emplace_back(_timer_func2, _timer_reps,
-                std::forward<_timer_Args>(_timer_args)...);
-        _timer_timers2.emplace_back(_timer_func2, _timer_reps,
-                std::forward<_timer_Args>(_timer_args)...);
-        _timer_timers1.emplace_back(_timer_func1, _timer_reps,
-                std::forward<_timer_Args>(_timer_args)...);
+    reps /= n;
+    std::vector<timer> timers1, timers2;
+    timers1.reserve(n);
+    timers2.reserve(n);
+    n /= 2;
+    while (n) {
+        --n;
+        timers1.emplace_back(func1, reps,
+                std::forward<Args>(args)...);
+        timers2.emplace_back(func2, reps,
+                std::forward<Args>(args)...);
+        timers2.emplace_back(func2, reps,
+                std::forward<Args>(args)...);
+        timers1.emplace_back(func1, reps,
+                std::forward<Args>(args)...);
     }
-    return compare(_timer_timers1, _timer_timers2);
+    return compare(timers1, timers2);
 }
 
-template <class _timer_Func1, class _timer_Func2, class _timer_Reps,
-        class _timer_Period, class... _timer_Args>
-int timer::compare(_timer_Func1 _timer_func1, _timer_Func2 _timer_func2,
-        _timer::duration<_timer_Reps, _timer_Period> _timer_duration,
-        _timer_Args... _timer_args)
+template <class Func1, class Func2, class Reps,
+        class Period, class... Args>
+int timer::compare(Func1 func1, Func2 func2,
+        _timer::duration<Reps, Period> duration,
+        Args... args)
 {
     // Add 1 to allow for the time involved in the analysis
-    duration_type _timer_ns
-            (_timer::duration_cast<duration_type>(_timer_duration) /
+    duration_type ns
+            (_timer::duration_cast<duration_type>(duration) /
             (2 * MAX_TIMERS + 1));
-    std::vector<timer> _timer_timers1, _timer_timers2;
-    _timer_timers1.reserve(MAX_TIMERS);
-    _timer_timers2.reserve(MAX_TIMERS);
-    repetition_type _timer_n = MAX_TIMERS / 2;
-    while (_timer_n) {
-        --_timer_n;
-        _timer_timers1.emplace_back(_timer_func1, _timer_ns,
-                std::forward<_timer_Args>(_timer_args)...);
-        _timer_timers2.emplace_back(_timer_func2, _timer_ns,
-                std::forward<_timer_Args>(_timer_args)...);
-        _timer_timers2.emplace_back(_timer_func2, _timer_ns,
-                std::forward<_timer_Args>(_timer_args)...);
-        _timer_timers1.emplace_back(_timer_func1, _timer_ns,
-                std::forward<_timer_Args>(_timer_args)...);
+    std::vector<timer> timers1, timers2;
+    timers1.reserve(MAX_TIMERS);
+    timers2.reserve(MAX_TIMERS);
+    repetition_type n = MAX_TIMERS / 2;
+    while (n) {
+        --n;
+        timers1.emplace_back(func1, ns,
+                std::forward<Args>(args)...);
+        timers2.emplace_back(func2, ns,
+                std::forward<Args>(args)...);
+        timers2.emplace_back(func2, ns,
+                std::forward<Args>(args)...);
+        timers1.emplace_back(func1, ns,
+                std::forward<Args>(args)...);
     }
-    return compare(_timer_timers1, _timer_timers2);
+    return compare(timers1, timers2);
 }
 
 // Calculates the correlation coefficient
-template <class _timer_T, std::size_t _timer_N>
-timer::_timer_real timer::_timer_cc(_timer_T (&_timer_xs)[_timer_N],
-                                    _timer_T (&_timer_ys)[_timer_N])
+template <class T, std::size_t N>
+timer::real timer::cc(T (&xs)[N],
+                                    T (&ys)[N])
 {
-    _timer_real _timer_x[_timer_N];
-    _timer_real _timer_y[_timer_N];
-    _timer_real _timer_xmean = 0.0l, _timer_ymean = 0.0l;
-    for (std::size_t _timer_i = 0; _timer_i < _timer_N; ++_timer_i) {
-        _timer_x[_timer_i] = static_cast<_timer_real>(_timer_xs[_timer_i]);
-        _timer_xmean += _timer_x[_timer_i];
-        _timer_y[_timer_i] = static_cast<_timer_real>(_timer_ys[_timer_i]);
-        _timer_ymean += _timer_y[_timer_i];
+    real x[N];
+    real y[N];
+    real xmean = 0.0l, ymean = 0.0l;
+    for (std::size_t i = 0; i < N; ++i) {
+        x[i] = static_cast<real>(xs[i]);
+        xmean += x[i];
+        y[i] = static_cast<real>(ys[i]);
+        ymean += y[i];
     }
-    _timer_xmean /= _timer_N;
-    _timer_ymean /= _timer_N;
-    _timer_real _timer_xres, _timer_yres, _timer_sx = 0.0l, _timer_sy = 0.0l,
-            _timer_sxy = 0.0l;
-    for (std::size_t _timer_i = 0; _timer_i < _timer_N; ++_timer_i) {
-        _timer_xres = _timer_x[_timer_i] - _timer_xmean;
-        _timer_sx += _timer_xres * _timer_xres;
-        _timer_yres = _timer_y[_timer_i] - _timer_ymean;
-        _timer_sy += _timer_yres * _timer_yres;
-        _timer_sxy += _timer_xres * _timer_yres;
+    xmean /= N;
+    ymean /= N;
+    real xres, yres, sx = 0.0l, sy = 0.0l,
+            sxy = 0.0l;
+    for (std::size_t i = 0; i < N; ++i) {
+        xres = x[i] - xmean;
+        sx += xres * xres;
+        yres = y[i] - ymean;
+        sy += yres * yres;
+        sxy += xres * yres;
     }
-    return _timer_sxy / std::sqrt(_timer_sx * _timer_sy);
+    return sxy / std::sqrt(sx * sy);
 }
 
-template <class _timer_Func, class _timer_T, std::size_t _timer_N>
-timer::time_complexity timer::approx_time_complexity(_timer_Func _timer_func,
-        std::size_t _timer_max_n, _timer_T _timer_duration)
+template <class Func, class T, std::size_t N>
+timer::time_complexity timer::approx_time_complexity(Func func,
+        std::size_t max_n, T duration)
 {
-    ratio_type _timer_times[_timer_N];
-    ratio_type _timer_ns_orig[_timer_N];
-    for (std::size_t _timer_i = 0, _timer_n = 1;
-            _timer_i < _timer_N;
-            ++_timer_i, _timer_n += _timer_max_n / _timer_N) {
-        _timer_ns_orig[_timer_i] = _timer_n;
-        timer _timer_tm (_timer_func, _timer_duration / _timer_N, _timer_n);
-        _timer_times[_timer_i] = _timer_tm.get_ratio();
+    ratio_type times[N];
+    ratio_type ns_orig[N];
+    for (std::size_t i = 0, n = 1;
+            i < N;
+            ++i, n += max_n / N) {
+        ns_orig[i] = n;
+        timer tm (func, duration / N, n);
+        times[i] = tm.get_ratio();
     }
-    std::vector< std::pair<time_complexity, _timer_real> > _timer_crs;
-    _timer_crs.reserve(_timer_N);
+    std::vector< std::pair<time_complexity, real> > crs;
+    crs.reserve(N);
     // O(1) is easy to detect manually, plus it's difficult to detect it via
     // correlation, so just assume it's not that and move on
-    ratio_type _timer_ns[_timer_N];
+    ratio_type ns[N];
     // Logarithmic
-    for (ratio_type _timer_i = 0; _timer_i < _timer_N; ++_timer_i) {
-        _timer_ns[_timer_i] = std::ilogb(_timer_ns_orig[_timer_i]);
+    for (ratio_type i = 0; i < N; ++i) {
+        ns[i] = std::ilogb(ns_orig[i]);
     }
-    _timer_crs.emplace_back(std::make_pair(LOGARITHMIC,
-            _timer_cc(_timer_times, _timer_ns)));
+    crs.emplace_back(std::make_pair(LOGARITHMIC,
+            cc(times, ns)));
     // Linear
-    for (ratio_type _timer_i = 0; _timer_i < _timer_N; ++_timer_i) {
-        _timer_ns[_timer_i] = _timer_ns_orig[_timer_i];
+    for (ratio_type i = 0; i < N; ++i) {
+        ns[i] = ns_orig[i];
     }
-    _timer_crs.emplace_back(std::make_pair(LINEAR,
-            _timer_cc(_timer_times, _timer_ns)));
+    crs.emplace_back(std::make_pair(LINEAR,
+            cc(times, ns)));
     // Linearithmic
-    for (ratio_type _timer_i = 0; _timer_i < _timer_N; ++_timer_i) {
-        _timer_ns[_timer_i] = std::ilogb(_timer_ns_orig[_timer_i]) *
-                _timer_ns_orig[_timer_i];
+    for (ratio_type i = 0; i < N; ++i) {
+        ns[i] = std::ilogb(ns_orig[i]) *
+                ns_orig[i];
     }
-    _timer_crs.emplace_back(std::make_pair(LINEARITHMIC,
-            _timer_cc(_timer_times, _timer_ns)));
+    crs.emplace_back(std::make_pair(LINEARITHMIC,
+            cc(times, ns)));
     // Quadratic
-    for (ratio_type _timer_i = 0; _timer_i < _timer_N; ++_timer_i) {
-        _timer_ns[_timer_i] = _timer_ns_orig[_timer_i] *
-                _timer_ns_orig[_timer_i];
+    for (ratio_type i = 0; i < N; ++i) {
+        ns[i] = ns_orig[i] *
+                ns_orig[i];
     }
-    _timer_crs.emplace_back(std::make_pair(QUADRATIC,
-            _timer_cc(_timer_times, _timer_ns)));
+    crs.emplace_back(std::make_pair(QUADRATIC,
+            cc(times, ns)));
     // Cubic
-    for (ratio_type _timer_i = 0; _timer_i < _timer_N; ++_timer_i) {
-        ratio_type _timer_tmp = _timer_ns_orig[_timer_i];
-        _timer_ns[_timer_i] = _timer_tmp * _timer_tmp * _timer_tmp;
+    for (ratio_type i = 0; i < N; ++i) {
+        ratio_type tmp = ns_orig[i];
+        ns[i] = tmp * tmp * tmp;
     }
-    _timer_crs.emplace_back(std::make_pair(CUBIC,
-            _timer_cc(_timer_times, _timer_ns)));
+    crs.emplace_back(std::make_pair(CUBIC,
+            cc(times, ns)));
     // Quartic
-    for (ratio_type _timer_i = 0; _timer_i < _timer_N; ++_timer_i) {
-        ratio_type _timer_tmp = _timer_ns_orig[_timer_i];
-        _timer_ns[_timer_i] = (_timer_tmp * _timer_tmp) *
-                (_timer_tmp * _timer_tmp);
+    for (ratio_type i = 0; i < N; ++i) {
+        ratio_type tmp = ns_orig[i];
+        ns[i] = (tmp * tmp) *
+                (tmp * tmp);
     }
-    _timer_crs.emplace_back(std::make_pair(QUADRATIC,
-            _timer_cc(_timer_times, _timer_ns)));
+    crs.emplace_back(std::make_pair(QUADRATIC,
+            cc(times, ns)));
     // Only calclate these next ones if they won't overflow
     // Exponential
-    if (_timer_max_n < std::ilogb(std::numeric_limits<ratio_type>::max())) {
-        for (ratio_type _timer_i = 0; _timer_i < _timer_N; ++_timer_i) {
-            auto _timer_pow2 = [] (ratio_type _timer_e) {
-                ratio_type _timer_result = 1;
-                ratio_type _timer_b = 2;
-                for ( ; _timer_e > 0; _timer_e /= 2) {
-                    if (_timer_e % 2 == 1) {
-                        _timer_result *= _timer_b;
+    if (max_n < std::ilogb(std::numeric_limits<ratio_type>::max())) {
+        for (ratio_type i = 0; i < N; ++i) {
+            auto pow2 = [] (ratio_type e) {
+                ratio_type result = 1;
+                ratio_type b = 2;
+                for ( ; e > 0; e /= 2) {
+                    if (e % 2 == 1) {
+                        result *= b;
                     }
-                    _timer_b *= _timer_b;
+                    b *= b;
                 }
-                return _timer_result;
+                return result;
             };
-            _timer_ns[_timer_i] = _timer_pow2(_timer_ns_orig[_timer_i]);
+            ns[i] = pow2(ns_orig[i]);
         }
-        _timer_crs.emplace_back(std::make_pair(EXPONENTIAL,
-                _timer_cc(_timer_times, _timer_ns)));
+        crs.emplace_back(std::make_pair(EXPONENTIAL,
+                cc(times, ns)));
     }
     // Factorial
-    if (_timer_max_n <= 20) {
-        for (ratio_type _timer_i = 0; _timer_i < _timer_N; ++_timer_i) {
-            auto _timer_factorial = [] (ratio_type _timer_x) -> ratio_type {
-                ratio_type _timer_f = 1;
-                for (ratio_type _timer_j = 2; _timer_j <= _timer_x; ++_timer_j) {
-                    _timer_f *= _timer_j;
+    if (max_n <= 20) {
+        for (ratio_type i = 0; i < N; ++i) {
+            auto factorial = [] (ratio_type x) -> ratio_type {
+                ratio_type f = 1;
+                for (ratio_type j = 2; j <= x; ++j) {
+                    f *= j;
                 }
-                return _timer_f;
+                return f;
             };
-            _timer_ns[_timer_i] = _timer_factorial(_timer_ns_orig[_timer_i]);
+            ns[i] = factorial(ns_orig[i]);
         }
-        _timer_crs.emplace_back(std::make_pair(FACTORIAL,
-                _timer_cc(_timer_times, _timer_ns)));
+        crs.emplace_back(std::make_pair(FACTORIAL,
+                cc(times, ns)));
     }
-    auto _timer_iter = std::max_element(_timer_crs.begin(), _timer_crs.end(),
-            [] (const std::pair<time_complexity, _timer_real> & _timer_elem1,
-                const std::pair<time_complexity, _timer_real> & _timer_elem2)
+    auto iter = std::max_element(crs.begin(), crs.end(),
+            [] (const std::pair<time_complexity, real> & elem1,
+                const std::pair<time_complexity, real> & elem2)
             {
-                return _timer_elem1.second < _timer_elem2.second;
+                return elem1.second < elem2.second;
             });
-    return _timer_iter->first;
+    return iter->first;
 }
 
-#endif // _timer_h_
+#endif // h_

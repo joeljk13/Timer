@@ -1,4 +1,4 @@
-OPTIMIZATION = -Os -fwhole-program
+OPTIMIZATION = -O2 -fwhole-program
 
 PARAMS =
 

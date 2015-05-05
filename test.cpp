@@ -1,5 +1,5 @@
 #define BOOST
-#include "timer.h"
+#include "timer.hpp"
 
 #include <chrono>
 
