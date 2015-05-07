@@ -1,35 +1,11 @@
-OPTIMIZATION = -O2 -fwhole-program
-
-PARAMS =
-
-LINK =
-
-SOURCES = get-bit.cpp
-
-OBJECTS = $(SOURCES:.cpp=.o)
-
-# All objects will depend on all headers, for simplicity
-HEADERS = timer.hpp
-
-EXECNAME = Test
-
 CC = g++
+CFLAGS = -save-temps -std=c++11 -O0 -fwhole-program -ggdb3
 
-ERR = -fmax-errors=3 -Wpedantic
+c-test: test.c
+	$(CC) $(CFLAGS) -o $@ $<
 
-CPARAMS = $(PARAMS) $(ERR) -std=c++11 -save-temps \
-    -fverbose-asm # -masm=intel (Doesn't work with boost)
-
-LPARAMS = $(PARAMS)
-
-timer: $(EXECNAME)
-	:
-
-$(EXECNAME): $(OBJECTS)
-	$(CC) -o $@ $(OPTIMIZATION) $(OBJECTS) $(LPARAMS) $(LINK)
-
-%.o: %.cpp $(HEADERS)
-	$(CC) -c -o $@ $(CPARAMS) $(OPTIMIZATION) $<
+cpp-test: test.cpp
+	$(CC) $(CFLAGS) -o $@ $<
 
 clean:
-	rm Test *.o *.ii *.s
+	rm c-test cpp-test *.o *.ii *.s
