@@ -4,7 +4,7 @@ PARAMS =
 
 LINK =
 
-SOURCES = test.cpp
+SOURCES = get-bit.cpp
 
 OBJECTS = $(SOURCES:.cpp=.o)
 
