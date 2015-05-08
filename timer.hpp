@@ -418,19 +418,23 @@ template <class T, std::size_t N>
 timer::real timer::cc(T (&xs)[N],
                                     T (&ys)[N])
 {
-    real x[N];
-    real y[N];
-    real xmean = 0.0l, ymean = 0.0l;
+    real x[N], y[N],
+         xmean = 0.0l,
+         ymean = 0.0l;
+
     for (std::size_t i = 0; i < N; ++i) {
         x[i] = static_cast<real>(xs[i]);
         xmean += x[i];
         y[i] = static_cast<real>(ys[i]);
         ymean += y[i];
     }
+
     xmean /= N;
     ymean /= N;
+
     real xres, yres, sx = 0.0l, sy = 0.0l,
             sxy = 0.0l;
+
     for (std::size_t i = 0; i < N; ++i) {
         xres = x[i] - xmean;
         sx += xres * xres;
@@ -438,6 +442,7 @@ timer::real timer::cc(T (&xs)[N],
         sy += yres * yres;
         sxy += xres * yres;
     }
+
     return sxy / std::sqrt(sx * sy);
 }
 
