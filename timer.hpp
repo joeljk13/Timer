@@ -72,7 +72,7 @@ public:
         constexpr duration_type zero = duration_type::zero();
         repetition_type         min_reps;
 
-        for (min_reps = 1; func_duration != zero; min_reps *= 2) {
+        for (min_reps = 1; func_duration == zero; min_reps *= 2) {
             repetition_type reps = min_reps;
 
             start = clock_type::now();
