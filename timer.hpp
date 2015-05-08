@@ -11,6 +11,12 @@
 #include <cmath>
 #include <cstddef>
 
+/*
+ * Each timer stores the total number of repetitions done, and the total
+ * duration (from these, the duration per repetition can be calculated). The
+ * timer does *not* store the function. As a result, you could use multiple
+ * functions with a single timer. The duration and repetitions will just add.
+ */
 class timer {
 
 public:
@@ -21,11 +27,17 @@ public:
     typedef duration_per_repetition_type ratio_type;
     typedef std::chrono::steady_clock    clock_type;
 
+    /*
+     * Initializes the timer to no duration or repetitions.
+     */
     timer() :
         duration_   (0),
         reps_       (0)
     { }
 
+    /*
+     * Initializes the timer, and immediately calls measure with the arguments.
+     */
     template <class Func, class... Args>
     timer(Func func, repetition_type reps, Args... args) :
         duration_   (0),
@@ -34,6 +46,9 @@ public:
         this->measure(func, reps, std::forward<Args>(args)...);
     }
 
+    /*
+     * Initializes the timer, and immediately calls measure with the arguments.
+     */
     template <class Func, class Reps, class Period, class... Args>
     timer(Func func, std::chrono::duration<Reps, Period> duration,
           Args... args) :
@@ -43,6 +58,10 @@ public:
         this->measure(func, duration, std::forward<Args>(args)...);
     }
 
+    /*
+     * Times function 'func' with 'reps' repetitions, and forwards 'args' to
+     * the function.
+     */
     template <class Func, class... Args>
     void measure(Func func, repetition_type reps, Args... args)
     {
@@ -60,10 +79,23 @@ public:
         duration_ += std::chrono::duration_cast<duration_type>(end - start);
     }
 
+    /*
+     * Times function 'func' with duration 'duration'. Automatically stops
+     * after around the amount of time specified by 'duration'. It may not be
+     * exact. Forwards 'args' to the function.
+     */
     template <class Func, class Reps, class Period, class... Args>
     void measure(Func func, std::chrono::duration<Reps, Period> duration,
                  Args... args)
     {
+        // Find the minimum number of repetitions that measure to nonzero time
+        // (call it n). Then use n to estimate how many repetitions will be
+        // needed to pass half the given duration. After running the function
+        // that many times, update the estimate of repitions for the next
+        // quarter of 'duration'. Keep repeating this until the time alloted
+        // has passed, or the number of repetitions estimated becomes less than
+        // n.
+
         clock_type::time_point start, end,
                                func_start (clock_type::now()),
                                func_end   (func_start + duration);
@@ -139,25 +171,55 @@ public:
 
     typedef long double real;
 
+    /*
+     * The default alpha value for statistical testing.
+     */
     static constexpr real default_alpha = 0.1l;
 
+    /*
+     * Does a statistical analysis (specifically, a t-test) comparing the
+     * timers in 'timers1' and 'timers2'. Uses 'alpha' for the statistical
+     * analysis.
+     */
     template <template <class, class...> class container>
     static int compare(container<timer> timers1, container<timer> timers2,
                        real alpha = default_alpha);
 
+    // I think these are basically arbitrary numbers.
     static constexpr repetition_type MIN_REPS   = 8;
     static constexpr unsigned int    MAX_TIMERS = 16;
 
+    /*
+     * Compares 'func1' and 'func2' using 'reps' repetitions, passing 'args' to
+     * each of them. Returns 1 if func1 is faster than func2, -1 if func2 is
+     * faster than func1, and 0 if the difference is not statistically
+     * significant (it uses a t-test to check for significance).
+     */
     template <class Func1, class Func2, class... Args>
     static int compare(Func1 func1, Func2 func2, repetition_type reps,
                        Args... args);
 
+    /*
+     * Compares 'func1' and 'func2', for the amount of time given by
+     * 'duration'. It may not last for exactly 'duration', but it should be
+     * close. Returns 1 if func1 is faster than func2, -1 if func2 is faster
+     * than func1, and 0 if the difference is not statistically significant (it
+     * uses a t-test to check for significance).
+     *
+     * This is my favorite function, since it's an easy way to compare two
+     * functions in terms of speed, and it uses all the time you give it to get
+     * the best result possible, but it's still gets you the answer when you
+     * want it.
+     */
     template <class Func1, class Func2, class Reps, class Period,
               class... Args>
     static int compare(Func1 func1, Func2 func2,
                        std::chrono::duration<Reps, Period> duration,
                        Args... args);
 
+    /*
+     * Calculates the correlation coefficient.
+     */
     template <class T, std::size_t N>
     static real cc(T (&xs)[N], T (&ys)[N]);
 
@@ -173,6 +235,15 @@ public:
         FACTORIAL
     };
 
+    /*
+     * Approximates the time complexity of 'func' emperically. 'func' should
+     * take a std::size_t argument. It won't be called with argument > max_n
+     * (e.g. for a factorial function max_n should be set <= 20 to prevent
+     * overflow, with sizeof(std::size_t) == 8).
+     *
+     * In my tests, it worked very well, and detected subtle differences like
+     * O(n) vs O(n*log(n)).
+     */
     template <class Func, class T, std::size_t N = 16>
     static time_complexity approx_time_complexity(Func func, std::size_t max_n,
         T duration_);
