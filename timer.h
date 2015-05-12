@@ -8,6 +8,25 @@
  */
 #define TIMER_NO_EXTRA 1
 
+/*
+ * By default, each of these functions assumes that the function is single
+ * threaded. Specify this option to make sure that timing is done properly with
+ * multi-threaded functions.
+ */
+#define TIMER_MULTI_THREAD 2
+
+/*
+ * The timer might create new processes to isolate the code being timed.
+ * Specifying this flag prevents any new processes from being created.
+ */
+#define TIMER_NOPROC 4
+
+/*
+ * The timer might create new threads to isolate the code being timed.
+ * Specifying this flag prevents any new threads from being created.
+ */
+#define TIMER_NOTHREAD 8
+
 struct timer {
     unsigned long long ns;
     unsigned int reps;
@@ -24,7 +43,7 @@ int
 timer_measure(void (*func)(void), struct timer *timer, int flags);
 
 // These next functions are shortcuts that use timer_measure and use the
-// default flags.
+// default flags. They just use 'timer' as an out argument.
 
 int
 timer_measure_ms(void (*func)(void), unsigned long long ms,
