@@ -1,10 +1,9 @@
 #include "timer.h"
 
 #include <assert.h>
-#include <time.h>
 #include <errno.h>
-
 #include <stdio.h>
+#include <time.h>
 
 static int
 measure_reps(void (*func)(void), struct timer *timer, int flags)
