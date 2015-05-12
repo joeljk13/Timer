@@ -12,4 +12,4 @@ cpp-test: test.cpp timer.hpp
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
 clean:
-	rm -f c-test cpp-test *.o *.ii *.s
+	rm -f c-test cpp-test *.o *.ii *.i *.s
