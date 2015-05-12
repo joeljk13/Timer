@@ -5,6 +5,15 @@
 #include <stdio.h>
 #include <time.h>
 
+static inline void
+run_reps(void (*func)(void), unsigned long reps)
+{
+    do {
+        func();
+    }
+    while (--reps);
+}
+
 static int
 measure_reps(void (*func)(void), struct timer *timer, int flags)
 {
@@ -21,10 +30,7 @@ measure_reps(void (*func)(void), struct timer *timer, int flags)
     }
 
     begin = clock();
-    do {
-        func();
-    }
-    while (--reps);
+    run_reps(func, reps);
     end = clock();
 
     assert(end >= begin);
@@ -71,10 +77,7 @@ measure_ns_reps(void (*func)(void), struct timer *timer, int flags)
         }
 
         begin = clock();
-        do {
-            func();
-        }
-        while (--reps);
+        run_reps(func, reps);
         end = clock();
 
         total_reps += min_reps;
@@ -113,10 +116,7 @@ measure_ns_reps(void (*func)(void), struct timer *timer, int flags)
         }
 
         begin = clock();
-        do {
-            func();
-        }
-        while (--reps);
+        run_reps(func, reps);
         end = clock();
 
         total_ns += (unsigned long long)((end - begin) / (1000000000 / CLOCKS_PER_SEC));
