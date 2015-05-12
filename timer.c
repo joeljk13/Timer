@@ -16,7 +16,7 @@ measure_reps(void (*func)(void), struct timer *timer, int flags)
 
     reps = timer->reps;
 
-    if (!(flags & TIMER_NO_EXTRA)) {
+    if (!(flags & TIMER_NOEXTRA)) {
         func();
     }
 

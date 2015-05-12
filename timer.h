@@ -6,7 +6,7 @@
  * measured to get it into cache and ensure more consistent running times.
  * Specifying this option in flags will stop this.
  */
-#define TIMER_NO_EXTRA 1
+#define TIMER_NOEXTRA 1
 
 /*
  * By default, each of these functions assumes that the function is single
