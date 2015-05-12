@@ -29,7 +29,7 @@
 
 struct timer {
     unsigned long long ns;
-    unsigned int reps;
+    unsigned long reps;
 };
 
 /*
@@ -50,6 +50,6 @@ timer_measure_ms(void (*func)(void), unsigned long long ms,
                  struct timer *timer);
 
 int
-timer_measure_reps(void (*func)(void), unsigned int reps, struct timer *timer);
+timer_measure_reps(void (*func)(void), unsigned long reps, struct timer *timer);
 
 #endif

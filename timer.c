@@ -8,7 +8,7 @@
 static int
 measure_reps(void (*func)(void), struct timer *timer, int flags)
 {
-    unsigned int reps;
+    unsigned long reps;
     clock_t begin, end;
 
     assert(timer->ns == 0);
@@ -47,8 +47,8 @@ measure_ns_reps(void (*func)(void), struct timer *timer, int flags)
     // n.
     unsigned long long total_ns;
     clock_t start, stop, begin, end;
-    unsigned int min_reps, total_reps;
-    const unsigned int max_reps = timer->reps;
+    unsigned long min_reps, total_reps;
+    const unsigned long max_reps = timer->reps;
     const unsigned long long ns = timer->ns;
 
     assert(max_reps == 0);
@@ -64,7 +64,7 @@ measure_ns_reps(void (*func)(void), struct timer *timer, int flags)
     min_reps = 1;
 
     for (;;) {
-        unsigned int reps = min_reps;
+        unsigned long reps = min_reps;
 
         if (max_reps > 0 && total_reps + reps > max_reps) {
             reps = max_reps - total_reps;
@@ -93,13 +93,13 @@ measure_ns_reps(void (*func)(void), struct timer *timer, int flags)
     }
 
     for (;;) {
-        unsigned int reps;
+        unsigned long reps;
 
         if (end >= stop) {
             break;
         }
 
-        reps = (unsigned int)(((unsigned long long)((stop - end) * (1000000000
+        reps = (unsigned long)(((unsigned long long)((stop - end) * (1000000000
                         / CLOCKS_PER_SEC)) * total_reps) / (total_ns * 2));
         if (reps < min_reps) {
             break;
@@ -156,7 +156,7 @@ timer_measure_ms(void (*func)(void), unsigned long long ms,
 }
 
 int
-timer_measure_reps(void (*func)(void), unsigned int reps, struct timer *timer)
+timer_measure_reps(void (*func)(void), unsigned long reps, struct timer *timer)
 {
     timer->ns = 0;
     timer->reps = reps;
