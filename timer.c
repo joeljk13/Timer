@@ -152,11 +152,7 @@ timer_measure_ms(void (*func)(void), unsigned long long ms,
     timer->ns = ms * 1000;
     timer->reps = 0;
 
-    if (timer_measure(func, timer, 0) != 0) {
-        return -1;
-    }
-
-    return 0;
+    return timer_measure(func, timer, 0);
 }
 
 int
@@ -165,9 +161,5 @@ timer_measure_reps(void (*func)(void), unsigned int reps, struct timer *timer)
     timer->ns = 0;
     timer->reps = reps;
 
-    if (timer_measure(func, timer, 0) != 0) {
-        return -1;
-    }
-
-    return 0;
+    return timer_measure(func, timer, 0);
 }
