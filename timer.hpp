@@ -244,7 +244,7 @@ public:
      * In my tests, it worked very well, and detected subtle differences like
      * O(n) vs O(n*log(n)).
      */
-    template <class Func, class T, std::size_t N = 16>
+    template <class Func, class T, std::size_t N = 15>
     static time_complexity approx_time_complexity(Func func, std::size_t max_n,
         T duration_);
 
