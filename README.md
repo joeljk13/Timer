@@ -29,6 +29,35 @@ and check out the return value, which should be equal to
 last last pretty close to 60 seconds. The 10000000 means that the lambda
 function won't be called with n > 10000000.
 
+Comparing Functions
+-------------------
+
+This times both functions and runs a statistical analysis (i.e. student's t
+test) to determine which function is faster by a statistically significant
+amount.
+
+For example, if you want to compare sorting vectors vs. sorting deques, try
+calling
+
+    timer::compare([] () {
+        std::deque<int> d (n);
+        for (size_t i = 0; i < n; ++i) {
+           d[i] = n - i;
+        }
+        std::sort(d.begin(), d.end());
+    }, [] () {
+        std::vector<int> v (n);
+        for (size_t i = 0; i < n; ++i) {
+            v[i] = n - i;
+        }
+        std::sort(v.begin(), v.end());
+    }, std::chrono::seconds(60));
+
+with `constexpr size_t n = 1000000` (or whatever number you want). It will run
+for around 60 seconds, and then return 1 if the deque is faster, 0 if neither
+is significantly faster than the other (NOT that they're statistically the
+same), or -1 if the vector is faster (When I ran this, I got -1).
+
 What's with timer.c and timer.h?
 --------------------------------
 
