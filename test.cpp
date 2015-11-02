@@ -29,19 +29,16 @@ static void func2()
 
 int main(void)
 {
-    unsigned int reps = 1024 * 1024;
-    std::chrono::seconds dur (60);
+    timer::time_complexity tc = timer::approx_time_complexity([] (size_t n) {
+        std::vector<size_t> v (n);
+        for (size_t i = 0; i < n; ++i) {
+            v[i] = n - i;
+        }
+        std::sort(v.begin(), v.end());
+    }, 10000000, std::chrono::seconds(60));
 
-    timer tm1 (func1, reps);
-    assert(tm1.get_repetitions() == reps);
-    std::cout << tm1.get_ratio() << std::endl;
-    std::cout << "This should take 1 minute" << std::endl;
-    timer tm2 (func2, dur);
-
-    std::cout << tm1.get_ratio()
-              << std::endl
-              << tm2.get_ratio()
-              << std::endl;
+    std::cout << (int)tc << std::endl;
+    std::cout << (int)timer::time_complexity::LINEARITHMIC << std::endl;
 
     return 0;
 }
